@@ -77,23 +77,21 @@ class MultimodalDataset(Sequence):
             ValueError: If both text_cols and image_cols are None or empty.
         """
         if text_cols:
-            # TODO: Get the text data from the DataFrame as a NumPy array
+            # Get the text data from the DataFrame as a NumPy array
             self.text_data = df[text_cols].values.astype(np.float32)
         else:
-            # Else, set text data to None
             self.text_data = None
-            
+        
         if image_cols:
-            # TODO: Get the image data from the DataFrame as a NumPy array
+            # Get the image data from the DataFrame as a NumPy array
             self.image_data = df[image_cols].values.astype(np.float32)
         else:
-            # Else, set image data to None
             self.image_data = None
-            
+        
         if not text_cols and not image_cols:
             raise ValueError("At least one of text_cols or image_cols must be provided.")
         
-        # TODO: Get the labels from the DataFrame and encode them
+        # Get the labels from the DataFrame and encode them
         self.labels = df[label_col].values
 
         # Use provided encoder or fit a new one
@@ -197,19 +195,18 @@ def create_early_fusion_model(text_input_size, image_input_size, output_size, hi
         raise ValueError("At least one of text_input_size and image_input_size must be provided.")
     
     if text_input_size is not None:
-        # TODO: Define text input layer for only text data
+        # Define text input layer for only text data
         text_input = Input(shape=(text_input_size,), name='text')
-    else:   
+    else:
         text_input = None
     if image_input_size is not None:
-        # TODO: Define image input layer for only image data
+        # Define image input layer for only image data
         image_input = Input(shape=(image_input_size,), name='image')
     else:
         image_input = None
     
-    
     if text_input_size is not None and image_input_size is not None:
-        # TODO: Concatenate text and image inputs if both are provided
+        # Concatenate text and image inputs if both are provided
         x = Concatenate()([text_input, image_input])
     elif text_input_size is not None:
         x = text_input
@@ -217,30 +214,25 @@ def create_early_fusion_model(text_input_size, image_input_size, output_size, hi
         x = image_input
 
     if isinstance(hidden, int):
-        # TODO: Add a single dense layer 
-        # Optionally play with activation, dropout and normalization
+        # Add a single dense layer 
         x = Dense(hidden, activation='relu')(x)
         x = Dropout(p)(x)
     elif isinstance(hidden, list):
         for h in hidden:
-            # TODO: Add multiple dense layers based on the hidden list
-            # Optionally play with activation, dropout and normalization
+            # Add multiple dense layers based on the hidden list
             x = Dense(h, activation='relu')(x)
             x = Dropout(p)(x)
             x = BatchNormalization()(x)
 
-    # TODO: Add the output layer with softmax activation
+    # Add the output layer with softmax activation
     output = Dense(output_size, activation='softmax', name='output')(x)
 
     # Create the model
     if text_input_size is not None and image_input_size is not None:
-        # TODO: Define the model with both text and image inputs
         model = Model(inputs=[text_input, image_input], outputs=output)
     elif text_input_size is not None:
-        # TODO: Define the model with only text input
         model = Model(inputs=text_input, outputs=output)
     elif image_input_size is not None:
-        # TODO: Define the model with only image input
         model = Model(inputs=image_input, outputs=output)
     else:
         raise ValueError("At least one of text_input_size and image_input_size must be provided.")
@@ -370,45 +362,45 @@ def train_mlp(train_loader, test_loader, text_input_size, image_input_size, outp
         tf.random.set_seed(seed)
       
     # Create an instance of the early fusion model  
-    # TODO: Create an early fusion model using the provided input sizes and output size
-    model = create_early_fusion_model(text_input_size, image_input_size, output_size, hidden=[128], p=p)
+    model = create_early_fusion_model(text_input_size, image_input_size, output_size, p=p)
 
     # Compute class weights for imbalanced datasets
     if set_weights:
         class_indices = np.argmax(train_loader.labels, axis=1)
-        # TODO: Compute class weights using the training labels
-        # You should use the `compute_class_weight` function from scikit-learn.
-        class_weights = None
+        # Compute class weights using the training labels
+        class_weights = compute_class_weight(class_weight='balanced', classes=np.arange(output_size), y=class_indices)
         class_weights = {i: weight for i, weight in enumerate(class_weights)}
+    else:
+        class_weights = None
 
-    # TODO: Choose the loss function for multi-class classification
+    # Choose the loss function for multi-class classification
     loss = CategoricalCrossentropy()
 
     # Choose the optimizer
     if adam:
-        # TODO: Use the Adam optimizer with the specified learning rate
         optimizer = Adam(learning_rate=lr)
     else:
-        # TODO: Use the SGD optimizer with the specified learning rate
-        optimizer = SGD(learning_rate=lr, momentum=0.9)
+        optimizer = SGD(learning_rate=lr)
 
-    # TODO: Compile the model with the chosen optimizer and loss function
+    # Compile the model with the chosen optimizer and loss function
     model.compile(optimizer=optimizer, loss=loss, metrics=['accuracy'])
 
-    # TODO: Define an early stopping callback with the specified patience
+    # Define an early stopping callback with the specified patience
     early_stopping = EarlyStopping(monitor='val_loss', patience=patience, restore_best_weights=True)
 
-    # TODO: Train the model using the training data and validation data
+    # Train the model using the training data and validation data
     # Use the class weights if set_weights
     # Use the early stopping callback
     # Use the number of epochs specified
     if train_model:
-        history = model.fit(train_loader,
-                            validation_data=test_loader,
-                            epochs=num_epochs, 
-                            class_weight=class_weights if set_weights else None,
-                            callbacks=[early_stopping], 
-                            verbose=1)
+        history = model.fit(
+            train_loader,
+            validation_data=test_loader,
+            epochs=num_epochs,
+            callbacks=[early_stopping],
+            class_weight=class_weights if set_weights else None,
+            verbose=1
+        )
     else:
         history = None
 
