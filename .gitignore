@@ -1,5 +1,9 @@
 # Ignore the data folder
 data/
+Embeddings/
+Embeddings_test/
+tests/__pycache__/
+src/__pycache__/
 .Trash-0
 .ipynb_checkpoints/
 .DS_Store
@@ -9,3 +13,6 @@ data/
 .env.development.local
 .env.test.local
 .env.production.local
+.pytest_cache/
+anyoneai_project.egg-info/
+.git/

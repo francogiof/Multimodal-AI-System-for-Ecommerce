@@ -29,11 +29,12 @@ def load_and_preprocess_image(image_path, target_size=(224, 224)):
     - np.array: Preprocessed image.
     """
     # TODO: Open the image using PIL Image.open and convert it to RGB format
-    img = Image.open(image_path).convert("RGB")
+    img = None
     # TODO: Resize the image to the target size
-    img = img.resize(target_size)
+    img = None
     # TODO: Convert the image to a numpy array and scale the pixel values to [0, 1]
-    img = img = np.array(img) / 255.0
+    img = None
+
     return img
 
 
@@ -91,8 +92,11 @@ class FoundationalCVModel:
         
         
         if backbone == 'resnet50':
-            # Load the ResNet50 model from tensorflow.keras.applications
-            self.base_model = ResNet50(weights="imagenet", include_top=False, input_tensor=input_layer)
+            # TODO: Load the ResNet50 model from tensorflow.keras.applications
+            self.base_model = None
+        elif backbone == 'resnet101':
+            # TODO: Load the ResNet101 model from tensorflow.keras.applications
+            self.base_model = None
         elif backbone == 'densenet121':
             # TODO: Load the DenseNet121 model from tensorflow.keras.applications
             self.base_model = None
@@ -103,10 +107,8 @@ class FoundationalCVModel:
             # TODO: Load the InceptionV3 model from tensorflow.keras.applications
             self.base_model = None
         elif backbone == 'convnextv2_tiny':
-            # Load the ConvNeXtV2 Tiny model from transformers
-            self.base_model = TFConvNextV2Model.from_pretrained("facebook/convnextv2-tiny-22k-224")
-            # Transform input from channels_last to channels_first
-            x = tf.transpose(input_layer, perm=[0, 3, 1, 2])
+            # TODO: Load the ConvNeXtV2 Tiny model from transformers
+            self.base_model = None
         elif backbone == 'convnextv2_base':
             # TODO: Load the ConvNeXtV2 Base model from transformers
             self.base_model = None
@@ -135,28 +137,26 @@ class FoundationalCVModel:
         
         if mode == 'eval':
             # TODO: Set the model to evaluation mode (non-trainable)
-        
-            self.base_model.trainable = False
+            pass
         
         # Take into account the model's input requirements. In models from transformers, the input is channels first, but in models from keras.applications, the input is channels last.
         # Aditionally, the output of the model is different in both cases, we need to get the pooling of the output layer.
-             
+        
         # If is a model from transformers:
         if backbone in ['vit_base', 'vit_large', 'convnextv2_tiny', 'convnextv2_base', 'convnextv2_large', 'swin_tiny', 'swin_small', 'swin_base']:
             # TODO: Adjust the input for channels first models within the model
             # You can use the perm argument of tf.transpose to permute the dimensions of the input tensor
-            input_layer_transposed = tf.transpose(input_layer, perm=[0, 3, 1, 2])
+            input_layer_transposed = None
             # TODO: Get the pooling output of the model "pooler_output"
-            outputs = self.base_model(input_layer_transposed).pooler_output
+            outputs = None
         # If is a model from keras.applications:
         else:
             # TODO: Get the pooling output of the model
             # In this case the pooling layer is not included in the model, we can use a pooling layer such as GlobalAveragePooling2D
-            base_model_output = self.base_model(input_layer, training=False)
-            outputs = GlobalAveragePooling2D()(base_model_output)
+            outputs = None
         
         # TODO: Create the final model with the input layer and the pooling output
-        self.model = Model(inputs=input_layer, outputs=outputs)
+        self.model = Model()
         
     def get_output_shape(self):
         """
@@ -183,8 +183,8 @@ class FoundationalCVModel:
         numpy.ndarray
             Predictions or features from the model for the given images.
         """
-        # Perform a forward pass through the model and return the predictions
-        predictions = self.model.predict(images, verbose=0)
+        # TODO: Perform a forward pass through the model and return the predictions
+        predictions = None
         return predictions
 
 
