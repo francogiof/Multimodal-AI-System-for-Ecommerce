@@ -95,12 +95,17 @@ class GPT:
         """
         # Load the CSV file
         df = pd.read_csv(self.path)
-        # TODO: Generate embeddings in a new column 'embeddings', for the specified column using the `get_embedding` method
-        # You can use a lambda function to apply the `get_embedding` method to each row in the column
-        df["embeddings"] = None
-
-        os.makedirs(directory, exist_ok=True) 
-        # TODO: Save the DataFrame with the embeddings to a new CSV file in the specified directory
+        
+        # Generate embeddings for the specified column using the `get_embedding` method
+        df["embeddings"] = df[column].apply(lambda x: self.get_embedding(str(x)).tolist())
+        
+        # Create directory if it doesn't exist
+        os.makedirs(directory, exist_ok=True)
+        
+        # Save the DataFrame with the embeddings to a new CSV file
+        output_path = os.path.join(directory, file)
+        df.to_csv(output_path, index=False)
+        print(f"Embeddings saved to {output_path}")
 
 
 ## Hugging face Models
@@ -157,19 +162,17 @@ class HuggingFaceEmbeddings:
             device (str, optional): Device to use for model processing. Defaults to 'cuda' if available, otherwise 'cpu'.
         """
         self.model_name = model_name
-        # TODO: Load the Hugging Face tokenizer from a pre-trained model
+        # Load the Hugging Face tokenizer from a pre-trained model
         self.tokenizer = AutoTokenizer.from_pretrained(model_name)
-        # TODO: Load the model from the Hugging Face model hub from the specified model name
+        # Load the model from the Hugging Face model hub from the specified model name
         self.model = AutoModel.from_pretrained(model_name)
         self.path = path
         self.save_path = save_path or 'Models'
         
         # Define device
         if device is None:
-            if torch.cuda.is_available():
-                self.device = torch.device('cuda')
-            else:
-                self.device = torch.device('cpu')
+            # Note: If you have a mac, you may want to change 'cupa' to 'mps' to use GPU
+            self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         else:
             self.device = torch.device(device)
         print(f"Using device: {self.device}")
@@ -190,7 +193,13 @@ class HuggingFaceEmbeddings:
             np.ndarray: A numpy array containing the embedding vector for the input text.
         """
         ### TODO: Tokenize the input text using the Hugging Face tokenizer
-        inputs = self.tokenizer(text, return_tensors="pt", padding=True, truncation=True, max_length=512)
+        inputs = self.tokenizer(
+             text,
+             return_tensors='pt',
+             padding=True,
+             truncation=True,  # Puede perder información si los textos son demasiado largos
+             max_length=512    # Ajusta max_length según sea necesario
+        )
         
         # Move the inputs to the device
         inputs = {key: value.to(self.device) for key, value in inputs.items()}
@@ -203,20 +212,34 @@ class HuggingFaceEmbeddings:
         # Remember that the model will return embeddings for the whole sequence, so you may need to aggregate them
         # Get the last hidden state and take the mean across the sequence dimension
         # The resulting tensor should have shape [batch_size, hidden_size]
-        embeddings = outputs.last_hidden_state.mean(dim=1).cpu().numpy()
+        embeddings = outputs.last_hidden_state.mean(dim=1).squeeze(0).cpu().numpy()
         
         return embeddings
 
     def get_embedding_df(self, column, directory, file):
+        """
+        Reads a CSV file, computes embeddings for a specified text column, and saves the results in a new CSV file.
+
+        Args:
+            column (str): The name of the column in the CSV file that contains the text data.
+            directory (str): The directory where the output CSV file will be saved.
+            file (str): The name of the output CSV file.
+
+        Side Effects:
+            - Saves a new CSV file containing the original data along with the computed embeddings to the specified directory.
+        """
         # Load the CSV file
         df = pd.read_csv(self.path)
-        # TODO: Generate embeddings for the specified column using the `get_embedding` method
-        # Make sure to convert the embeddings to a list before saving to the DataFrame
-        df["embeddings"] = df[column].apply(lambda x: self.get_embedding(x).tolist())
-
+        
+        # Generate embeddings for the specified column using the `get_embedding` method
+        df["embeddings"] = df[column].apply(lambda x: self.get_embedding(str(x)).tolist())
+        
+        # Create directory if it doesn't exist
         os.makedirs(directory, exist_ok=True)
-        # TODO: Save the DataFrame with the embeddings to a new CSV file in the specified directory
+        
+        # Save the DataFrame with the embeddings to a new CSV file
         output_path = os.path.join(directory, file)
         df.to_csv(output_path, index=False)
         print(f"Embeddings saved to {output_path}")
+        
 
